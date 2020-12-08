@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(!CONFIG_REDNODEBUS)
+if(NOT DEFINED CONFIG_REDNODEBUS)
 
 zephyr_sources_ifdef(CONFIG_IEEE802154_CC2520 ieee802154_cc2520.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_KW41Z ieee802154_kw41z.c)
