@@ -31,6 +31,14 @@ config SPI_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config SPI_POLLING
+	bool "SPI driver in polling mode"
+	depends on !SPI_ASYNC
+	default n
+	help
+	  Replace the semaphore between SPI transmissions with a busy wait for 
+	  applications requiring very low latency.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
