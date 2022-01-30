@@ -80,6 +80,12 @@ enum ieee802154_rx_fail_reason {
 	IEEE802154_RX_FAIL_OTHER	  /* General reason */
 };
 
+#ifdef CONFIG_REDNODEBUS
+enum rednodebus_user_event {
+	REDNODEBUS_USER_EVENT_NEW_STATE,			/* New state */
+};
+#endif
+
 typedef void (*energy_scan_done_cb_t)(const struct device *dev,
 				      int16_t max_ed);
 
@@ -93,6 +99,10 @@ typedef void (*rednodebus_event_cb_t)(const struct device *dev,
 
 typedef void (*rednodebus_ranging_event_cb_t)(const struct device *dev,
 				      void *rnb_ranging_event);
+
+typedef void (*rednodebus_user_event_cb_t)(const struct device *dev,
+				      enum rednodebus_user_event evt,
+				      void *event_params);
 #endif /* CONFIG_REDNODEBUS */
 
 struct ieee802154_filter {
@@ -181,6 +191,11 @@ enum ieee802154_config_type {
 	 *  will disable rednodebus ranging radio events notification.
 	 */
 	REDNODEBUS_CONFIG_RANGING_EVENT_HANDLER,
+
+	/** Specifies new rednodebus user radio event handler. Specifying NULL as a handler
+	 *  will disable rednodebus user radio events notification.
+	 */
+	REDNODEBUS_CONFIG_USER_EVENT_HANDLER,
 #endif /* CONFIG_REDNODEBUS */
 
 	/** Updates MAC keys and key index for radios supporting transmit security. */
@@ -273,6 +288,9 @@ struct ieee802154_config {
 
 		/** ``REDNODEBUS_CONFIG_RANGING_EVENT_HANDLER`` */
 		rednodebus_ranging_event_cb_t rnb_ranging_event_handler;
+
+		/** ``REDNODEBUS_CONFIG_USER_EVENT_HANDLER`` */
+		rednodebus_user_event_cb_t rnb_user_event_handler;
 #endif /* CONFIG_REDNODEBUS */
 
 		/** ``IEEE802154_CONFIG_MAC_KEYS``
@@ -320,6 +338,56 @@ struct ieee802154_config {
 		} ack_ie;
 	};
 };
+
+#ifdef CONFIG_REDNODEBUS
+/** RedNodeBus user bus state. */
+enum rednodebus_user_bus_state {
+	REDNODEBUS_USER_BUS_STATE_STOPPED,
+	REDNODEBUS_USER_BUS_STATE_UNSYNCHRONIZED,
+	REDNODEBUS_USER_BUS_STATE_SYNCHRONIZED,
+	REDNODEBUS_USER_BUS_STATE_CONNECTED
+};
+
+/** RedNodeBus user bus role. */
+enum rednodebus_user_bus_role {
+	REDNODEBUS_USER_ROLE_UNDEFINED,
+	REDNODEBUS_USER_ROLE_ANCHOR,
+	REDNODEBUS_USER_ROLE_TAG
+};
+
+/** RedNodeBus user uwb mode. */
+enum rednodebus_user_uwb_mode {
+	REDNODEBUS_USER_UWB_MODE_NONE,
+	REDNODEBUS_USER_UWB_MODE_LONG_RANGE_STXP,
+	REDNODEBUS_USER_UWB_MODE_HIGH_RATE_STXP,
+	REDNODEBUS_USER_UWB_MODE_LONG_RANGE_CTXP,
+	REDNODEBUS_USER_UWB_MODE_HIGH_RATE_CTXP,
+};
+
+/** RedNodeBus user ranging mode. */
+enum rednodebus_user_ranging_mode {
+	REDNODEBUS_USER_RANGING_MODE_DISABLED,
+	REDNODEBUS_USER_RANGING_MODE_3W_A2A,
+	REDNODEBUS_USER_RANGING_MODE_3W_A2T,
+	REDNODEBUS_USER_RANGING_MODE_2W_A2T,
+	REDNODEBUS_USER_RANGING_MODE_2W_T2A,
+};
+
+/** RedNodeBus user config. */
+struct rednodebus_user_config {
+	bool ranging_enabled;
+	uint32_t ranging_period_ms;
+};
+
+/** RedNodeBus user event parameters. */
+struct rednodebus_user_event_params {
+	uint8_t state;
+	uint8_t role;
+	uint32_t period_ms;
+	uint8_t uwb_mode;
+	uint8_t ranging_mode;
+};
+#endif
 
 /**
  * @brief IEEE 802.15.4 radio interface API.
@@ -397,6 +465,17 @@ struct ieee802154_radio_api {
 	/** Set RedNodeBus event as done. */
 	int (*set_rnb_event_done)(const struct device *dev,
 			 void *rnb_event);
+
+	/** Start RedNodeBus. */
+	int (*start_rnb)(const struct device *dev,
+			const uint8_t role);
+
+	/** Stop RedNodeBus. */
+	int (*stop_rnb)(const struct device *dev);
+
+	/** Configure RedNodeBus. */
+	int (*configure_rnb)(const struct device *dev,
+			const struct rednodebus_user_config *user_config);
 #endif /* CONFIG_REDNODEBUS */
 };
 
