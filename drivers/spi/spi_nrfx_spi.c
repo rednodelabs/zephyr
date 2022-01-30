@@ -347,6 +347,46 @@ static int spi_nrfx_pm_control(const struct device *dev,
 			? NRF_GPIO_PIN_PULLDOWN		\
 			: NRF_GPIO_PIN_NOPULL)
 
+#ifdef CONFIG_SPI_BLOCKING
+#define SPI_NRFX_SPI_DEVICE(idx)					       \
+	BUILD_ASSERT(							       \
+		!SPI_PROP(idx, miso_pull_up) || !SPI_PROP(idx, miso_pull_down),\
+		"SPI"#idx						       \
+		": cannot enable both pull-up and pull-down on MISO line");    \
+	static int spi_##idx##_init(const struct device *dev)		       \
+	{								       \
+		IRQ_DIRECT_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
+			    nrfx_spi_##idx##_irq_handler, 0);	       \
+		int err = init_spi(dev);				       \
+		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
+		return err;					       	       \
+	}								       \
+	static struct spi_nrfx_data spi_##idx##_data = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
+		.busy = false,						       \
+	};								       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
+		.spi = NRFX_SPI_INSTANCE(idx),				       \
+		.config = {						       \
+			.sck_pin   = SPI_PROP(idx, sck_pin),		       \
+			.mosi_pin  = SPI_PROP(idx, mosi_pin),		       \
+			.miso_pin  = SPI_PROP(idx, miso_pin),		       \
+			.ss_pin    = NRFX_SPI_PIN_NOT_USED,		       \
+			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
+			.frequency = NRF_SPI_FREQ_4M,			       \
+			.mode      = NRF_SPI_MODE_0,			       \
+			.bit_order = NRF_SPI_BIT_ORDER_MSB_FIRST,	       \
+			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
+		}							       \
+	};								       \
+	DEVICE_DT_DEFINE(SPI(idx),					       \
+		      spi_##idx##_init,					       \
+		      spi_nrfx_pm_control,				       \
+		      &spi_##idx##_data,				       \
+		      &spi_##idx##z_config,				       \
+		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
+		      &spi_nrfx_driver_api)
+#else
 #define SPI_NRFX_SPI_DEVICE(idx)					       \
 	BUILD_ASSERT(							       \
 		!SPI_PROP(idx, miso_pull_up) || !SPI_PROP(idx, miso_pull_down),\
@@ -387,6 +427,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
 		      &spi_nrfx_driver_api)
 
+#endif /* CONFIG_SPI_BLOCKING */
 #ifdef CONFIG_SPI_0_NRF_SPI
 SPI_NRFX_SPI_DEVICE(0);
 #endif
