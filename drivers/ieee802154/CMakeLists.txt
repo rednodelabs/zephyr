@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(NOT DEFINED CONFIG_REDNODEBUS)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_UPIPE		ieee802154_uart_pipe.c)
@@ -24,4 +26,6 @@ if(CONFIG_SOC_CC1352R)
      zephyr_library_compile_definitions("DeviceFamily_CC13X2")
 elseif(CONFIG_SOC_CC2652R)
      zephyr_library_compile_definitions("DeviceFamily_CC26X2")
+endif()
+
 endif()
