@@ -38,6 +38,14 @@ config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	help
 	  The tolerance value in ms for the SPI completion timeout logic.
 
+config SPI_BLOCKING
+	bool "SPI driver in blocking mode"
+	depends on !SPI_ASYNC
+	default n
+	help
+	  Replace the semaphore between SPI transmissions with a busy wait for
+	  applications requiring very low latency.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
