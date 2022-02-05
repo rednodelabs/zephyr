@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
 #include <openthread/message.h>
+#include <openthread/ncp.h>
 
 #include "platform-zephyr.h"
 
@@ -64,6 +65,10 @@ enum pending_events {
 	PENDING_EVENT_DETECT_ENERGY_DONE, /* Energy Detection finished */
 	PENDING_EVENT_SLEEP, /* Sleep if idle */
 	PENDING_EVENT_COUNT /* Keep last */
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+	,
+	PENDING_EVENT_REDNODEBUS
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */
 };
 
 K_SEM_DEFINE(radio_sem, 0, 1);
@@ -97,6 +102,9 @@ static otError tx_result;
 
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+K_FIFO_DEFINE(rnb_event_fifo);
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */
 
 static inline bool is_pending_event_set(enum pending_events event)
 {
@@ -209,6 +217,17 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 	}
 }
 
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+void handle_radio_rnb_event(const struct device *dev,
+						void *rnb_event)
+{
+	ARG_UNUSED(dev);
+
+	k_fifo_put(&rnb_event_fifo, rnb_event);
+	set_pending_event(PENDING_EVENT_REDNODEBUS);
+}
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */
+
 static void dataInit(void)
 {
 	tx_pkt = net_pkt_alloc(K_NO_WAIT);
@@ -250,6 +269,11 @@ void platformRadioInit(void)
 
 	cfg.event_handler = handle_radio_event;
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_EVENT_HANDLER, &cfg);
+
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+	cfg.rnb_event_handler = handle_radio_rnb_event;
+	radio_api->configure(radio_dev, REDNODEBUS_CONFIG_EVENT_HANDLER, &cfg);
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */
 }
 
 void transmit_message(struct k_work *tx_job)
@@ -460,6 +484,30 @@ static int run_tx_task(otInstance *aInstance)
 void platformRadioProcess(otInstance *aInstance)
 {
 	bool event_pending = false;
+
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+	if (is_pending_event_set(PENDING_EVENT_REDNODEBUS)) {
+		void *rnb_event;
+		uint16_t *rnb_event_length;
+		uint8_t *rnb_event_data;
+		otError ret;
+
+		reset_pending_event(PENDING_EVENT_REDNODEBUS);
+		while ((rnb_event = (void*) k_fifo_get(&rnb_event_fifo, K_NO_WAIT)) != NULL) {
+			rnb_event_length = (uint16_t*) (((uint8_t*) rnb_event)+sizeof(void*)); /* 1st word reserved for use by fifo. */
+			rnb_event_data = (uint8_t*) (rnb_event_length+1);
+
+			ret = otNcpRnlRnbStreamWrite(rnb_event_data, *rnb_event_length);
+
+			if (ret != OT_ERROR_NONE)
+			{
+				LOG_ERR("otNcpRnlRnbStreamWrite");
+			}
+
+			while (radio_api->set_rnb_event_done(radio_dev, rnb_event) != 0);
+		}
+	}
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */
 
 	if (is_pending_event_set(PENDING_EVENT_FRAME_TO_SEND)) {
 		struct net_pkt *tx_pkt;
@@ -1232,3 +1280,23 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 }
 
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
+#if defined(CONFIG_REDNODEBUS) && defined(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
+otError otPlatRadioRnlRnbSendRequest(otInstance *aInstance,
+					const otRadioRnlRnbRequest *rnbRequest,
+					uint16_t rnbRequestLength)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	if (!rnbRequest)
+	{
+		return OT_ERROR_FAILED;
+	}
+
+	result = radio_api->send_rnb_request(radio_dev, rnbRequest->mRnbRequest, rnbRequestLength);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+#endif /* CONFIG_REDNODEBUS && CONFIG_OPENTHREAD_COPROCESSOR_RCP */

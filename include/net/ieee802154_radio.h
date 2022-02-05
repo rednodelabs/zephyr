@@ -87,6 +87,14 @@ typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 				      enum ieee802154_event evt,
 				      void *event_params);
 
+#ifdef CONFIG_REDNODEBUS
+typedef void (*rednodebus_event_cb_t)(const struct device *dev,
+				      void *rnb_event);
+
+typedef void (*rednodebus_ranging_event_cb_t)(const struct device *dev,
+				      void *rnb_ranging_event);
+#endif /* CONFIG_REDNODEBUS */
+
 struct ieee802154_filter {
 /** @cond ignore */
 	union {
@@ -162,6 +170,18 @@ enum ieee802154_config_type {
 	 *  will disable radio events notification.
 	 */
 	IEEE802154_CONFIG_EVENT_HANDLER,
+
+#ifdef CONFIG_REDNODEBUS
+	/** Specifies new rednodebus radio event handler. Specifying NULL as a handler
+	 *  will disable rednodebus radio events notification.
+	 */
+	REDNODEBUS_CONFIG_EVENT_HANDLER,
+
+	/** Specifies new rednodebus ranging radio event handler. Specifying NULL as a handler
+	 *  will disable rednodebus ranging radio events notification.
+	 */
+	REDNODEBUS_CONFIG_RANGING_EVENT_HANDLER,
+#endif /* CONFIG_REDNODEBUS */
 
 	/** Updates MAC keys and key index for radios supporting transmit security. */
 	IEEE802154_CONFIG_MAC_KEYS,
@@ -246,6 +266,14 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
 		ieee802154_event_cb_t event_handler;
+
+#ifdef CONFIG_REDNODEBUS
+		/** ``REDNODEBUS_CONFIG_EVENT_HANDLER`` */
+		rednodebus_event_cb_t rnb_event_handler;
+
+		/** ``REDNODEBUS_CONFIG_RANGING_EVENT_HANDLER`` */
+		rednodebus_ranging_event_cb_t rnb_ranging_event_handler;
+#endif /* CONFIG_REDNODEBUS */
 
 		/** ``IEEE802154_CONFIG_MAC_KEYS``
 		 *  Pointer to an array containing a list of keys used
@@ -359,6 +387,17 @@ struct ieee802154_radio_api {
 	 *  conditions (i.e.: temperature).
 	 */
 	uint8_t (*get_sch_acc)(const struct device *dev);
+
+#ifdef CONFIG_REDNODEBUS
+	/** Send RedNodeBus request. */
+	int (*send_rnb_request)(const struct device *dev,
+			const void *rnb_request,
+			const uint16_t rnb_request_length);
+
+	/** Set RedNodeBus event as done. */
+	int (*set_rnb_event_done)(const struct device *dev,
+			 void *rnb_event);
+#endif /* CONFIG_REDNODEBUS */
 };
 
 /* Make sure that the network interface API is properly setup inside
