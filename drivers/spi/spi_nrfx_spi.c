@@ -330,25 +330,22 @@ static int spi_nrfx_pm_control(const struct device *dev,
 	{								       \
 		IRQ_DIRECT_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_spi_##idx##_irq_handler, 0);	       \
-		int err = init_spi(dev);				       \
 		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
-		return err;					       	       \
+		return 0;					       	       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
+		.dev  = DEVICE_DT_GET(SPI(idx)),			       \
 		.busy = false,						       \
 	};								       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spi = NRFX_SPI_INSTANCE(idx),				       \
-		.config = {						       \
+		.def_config = {						       \
 			.sck_pin   = SPI_PROP(idx, sck_pin),		       \
 			.mosi_pin  = SPI_PROP(idx, mosi_pin),		       \
 			.miso_pin  = SPI_PROP(idx, miso_pin),		       \
 			.ss_pin    = NRFX_SPI_PIN_NOT_USED,		       \
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
-			.frequency = NRF_SPI_FREQ_4M,			       \
-			.mode      = NRF_SPI_MODE_0,			       \
-			.bit_order = NRF_SPI_BIT_ORDER_MSB_FIRST,	       \
 			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
 		}							       \
 	};								       \
