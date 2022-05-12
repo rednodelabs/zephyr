@@ -375,6 +375,8 @@ enum rednodebus_user_ranging_mode {
 
 /** RedNodeBus user config. */
 struct rednodebus_user_config {
+	uint32_t sync_sleep_period_ms;
+	uint16_t sync_active_period_ms;
 	bool ranging_enabled;
 	uint32_t ranging_period_ms;
 };
@@ -468,6 +470,7 @@ struct ieee802154_radio_api {
 
 	/** Start RedNodeBus. */
 	int (*start_rnb)(const struct device *dev,
+			const uint8_t network_id,
 			const uint8_t role);
 
 	/** Stop RedNodeBus. */
