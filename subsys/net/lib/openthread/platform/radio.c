@@ -501,7 +501,7 @@ void platformRadioProcess(otInstance *aInstance)
 
 			if (ret != OT_ERROR_NONE)
 			{
-				LOG_ERR("otNcpRnlRnbStreamWrite");
+				LOG_DBG("otNcpRnlRnbStreamWrite");
 			}
 
 			while (radio_api->set_rnb_event_done(radio_dev, rnb_event) != 0);
