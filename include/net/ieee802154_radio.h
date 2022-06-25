@@ -381,8 +381,9 @@ struct rednodebus_user_config {
 	uint32_t sync_sleep_period_ms;
 };
 
-/** RedNodeBus user ranging config. */
-struct rednodebus_user_ranging_config {
+/** RedNodeBus user runtime config. */
+struct rednodebus_user_runtime_config {
+	uint8_t tx_power;
 	bool ranging_enabled;
 	uint32_t ranging_period_ms;
 };
@@ -474,13 +475,13 @@ struct ieee802154_radio_api {
 	int (*set_rnb_event_done)(const struct device *dev,
 			 void *rnb_event);
 
-	/** Configure RedNodeBus. */
-	int (*configure_rnb)(const struct device *dev,
+	/** Initialize RedNodeBus configuration. */
+	int (*init_rnb_config)(const struct device *dev,
 			const struct rednodebus_user_config *user_config);
 
-	/** Configure RedNodeBus ranging. */
-	int (*configure_rnb_ranging)(const struct device *dev,
-			const struct rednodebus_user_ranging_config *user_ranging_config);
+	/** Update RedNodeBus runtime configuration. */
+	int (*update_rnb_runtime_config)(const struct device *dev,
+			const struct rednodebus_user_runtime_config *user_runtime_config);
 #endif /* CONFIG_REDNODEBUS */
 };
 
