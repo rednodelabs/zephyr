@@ -383,7 +383,6 @@ struct rednodebus_user_config {
 
 /** RedNodeBus user runtime config. */
 struct rednodebus_user_runtime_config {
-	uint8_t tx_power;
 	bool energy_save_mode_enabled;
 	bool ranging_enabled;
 	uint32_t ranging_period_ms;
