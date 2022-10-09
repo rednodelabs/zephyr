@@ -376,7 +376,6 @@ enum rednodebus_user_ranging_mode {
 
 /** RedNodeBus user config. */
 struct rednodebus_user_config {
-	uint8_t network_id;
 	uint8_t role;
 	uint16_t sync_active_period_ms;
 	uint32_t sync_sleep_period_ms;
@@ -389,13 +388,25 @@ struct rednodebus_user_runtime_config {
 	uint32_t ranging_period_ms;
 };
 
-/** RedNodeBus user event parameters. */
-struct rednodebus_user_event_params {
+/** RedNodeBus user state event. */
+struct rednodebus_user_event_state
+{
 	uint8_t state;
 	uint8_t role;
+	uint16_t rnb_id;
 	uint32_t period_ms;
 	uint8_t uwb_mode;
 	uint8_t ranging_mode;
+};
+
+/** RedNodeBus user event parameters. */
+struct rednodebus_user_event_params {
+	struct rednodebus_user_event_state state;
+};
+
+/** RedNodeBus user settings. */
+struct rednodebus_user_settings {
+	uint16_t rnb_id;
 };
 #endif
 
@@ -476,13 +487,18 @@ struct ieee802154_radio_api {
 	int (*set_rnb_event_done)(const struct device *dev,
 			 void *rnb_event);
 
-	/** Initialize RedNodeBus configuration. */
-	int (*init_rnb_config)(const struct device *dev,
+	/** Initialize RedNodeBus user configuration. */
+	int (*init_rnb_user_config)(const struct device *dev,
 			const struct rednodebus_user_config *user_config);
 
-	/** Update RedNodeBus runtime configuration. */
-	int (*update_rnb_runtime_config)(const struct device *dev,
+	/** Update RedNodeBus user runtime configuration. */
+	int (*update_rnb_user_runtime_config)(const struct device *dev,
 			const struct rednodebus_user_runtime_config *user_runtime_config);
+
+	/** Reset RedNodeBus user settings. */
+	int (*set_rnb_user_settings)(
+			const struct device *dev,
+			const struct rednodebus_user_settings *user_settings);
 #endif /* CONFIG_REDNODEBUS */
 };
 
