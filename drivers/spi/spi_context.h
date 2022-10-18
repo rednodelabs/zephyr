@@ -31,7 +31,9 @@ struct spi_context {
 	size_t num_cs_gpios;
 
 	struct k_sem lock;
+#ifndef CONFIG_SPI_BLOCKING
 	struct k_sem sync;
+#endif /* CONFIG_SPI_BLOCKING */
 	int sync_status;
 
 #ifdef CONFIG_SPI_ASYNC
@@ -48,6 +50,10 @@ struct spi_context {
 	uint8_t *rx_buf;
 	size_t rx_len;
 
+#ifdef CONFIG_SPI_BLOCKING
+	bool spi_complete;
+#endif /* CONFIG_SPI_BLOCKING */
+
 #ifdef CONFIG_SPI_SLAVE
 	int recv_frames;
 #endif /* CONFIG_SPI_SLAVE */
@@ -56,8 +62,10 @@ struct spi_context {
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
 	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
+#ifndef CONFIG_SPI_BLOCKING
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+#endif /* CONFIG_SPI_BLOCKING */
 
 #define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)		\
 	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
@@ -155,10 +163,14 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		status = ctx->sync_status;
 	}
 #else
+#ifdef CONFIG_SPI_BLOCKING
+	while(!ctx->spi_complete);
+#else
 	if (k_sem_take(&ctx->sync, timeout)) {
 		LOG_ERR("Timeout waiting for transfer complete");
 		return -ETIMEDOUT;
 	}
+#endif /* CONFIG_SPI_BLOCKING */
 	status = ctx->sync_status;
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -197,7 +209,11 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 	}
 #else
 	ctx->sync_status = status;
+#ifdef CONFIG_SPI_BLOCKING
+	ctx->spi_complete = true;
+#else
 	k_sem_give(&ctx->sync);
+#endif /* CONFIG_SPI_BLOCKING */
 #endif /* CONFIG_SPI_ASYNC */
 }
 
@@ -297,6 +313,10 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 					 &ctx->rx_len, dfs);
 
 	ctx->sync_status = 0;
+
+#ifdef CONFIG_SPI_BLOCKING
+	ctx->spi_complete = false;
+#endif /* CONFIG_SPI_BLOCKING */
 
 #ifdef CONFIG_SPI_SLAVE
 	ctx->recv_frames = 0;

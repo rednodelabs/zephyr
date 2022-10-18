@@ -371,7 +371,50 @@ static int spi_nrfx_init(const struct device *dev)
 		 .miso_pin  = DT_PROP_OR(SPI(idx), miso_pin,		\
 					 NRFX_SPI_PIN_NOT_USED),	\
 		 .miso_pull = SPI_NRFX_MISO_PULL(idx),))
-
+#ifdef CONFIG_SPI_BLOCKING
+#define SPI_NRFX_SPI_DEFINE(idx)					       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
+				     sck_pin, mosi_pin, miso_pin);	       \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
+		     !(SPI_PROP(idx, miso_pull_up) &&			       \
+		       SPI_PROP(idx, miso_pull_down)),			       \
+		"SPI"#idx						       \
+		": cannot enable both pull-up and pull-down on MISO line");    \
+	static void irq_connect##idx(void)				       \
+	{								       \
+		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
+			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
+	}								       \
+	static struct spi_nrfx_data spi_##idx##_data = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI(idx), ctx)		       \
+		.dev  = DEVICE_DT_GET(SPI(idx)),			       \
+		.busy = false,						       \
+	};								       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPI(idx))));	       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
+		.spi = {						       \
+			.p_reg = (NRF_SPI_Type *)DT_REG_ADDR(SPI(idx)),	       \
+			.drv_inst_idx = NRFX_SPI##idx##_INST_IDX,	       \
+		},							       \
+		.def_config = {						       \
+			SPI_NRFX_SPI_PIN_CFG(idx)			       \
+			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
+			.orc    = SPI_PROP(idx, overrun_character),	       \
+		},							       \
+		.irq_connect = irq_connect##idx,			       \
+		IF_ENABLED(CONFIG_PINCTRL,				       \
+			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),))	       \
+	};								       \
+	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
+	DEVICE_DT_DEFINE(SPI(idx),					       \
+		      spi_nrfx_init,					       \
+		      PM_DEVICE_DT_GET(SPI(idx)),			       \
+		      &spi_##idx##_data,				       \
+		      &spi_##idx##z_config,				       \
+		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
+		      &spi_nrfx_driver_api)
+#else
 #define SPI_NRFX_SPI_DEFINE(idx)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
 				     sck_pin, mosi_pin, miso_pin);	       \
@@ -415,6 +458,7 @@ static int spi_nrfx_init(const struct device *dev)
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
 		      &spi_nrfx_driver_api)
+#endif /* CONFIG_SPI_BLOCKING */
 
 #ifdef CONFIG_SPI_0_NRF_SPI
 SPI_NRFX_SPI_DEFINE(0);
