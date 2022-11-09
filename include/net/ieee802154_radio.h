@@ -82,9 +82,14 @@ enum ieee802154_rx_fail_reason {
 
 #ifdef CONFIG_REDNODEBUS
 enum rednodebus_user_event {
-	REDNODEBUS_USER_EVENT_NEW_STATE,	/* New state */
+	REDNODEBUS_USER_EVENT_NEW_STATE, /* New state */
 };
-#endif
+
+enum rednodebus_user_rxtx_signal {
+	REDNODEBUS_USER_RX_SIGNAL, /* Radio in RX */
+	REDNODEBUS_USER_TX_SIGNAL, /* Radio in TX */
+};
+#endif /* CONFIG_REDNODEBUS */
 
 typedef void (*energy_scan_done_cb_t)(const struct device *dev,
 				      int16_t max_ed);
@@ -98,11 +103,15 @@ typedef void (*rednodebus_event_cb_t)(const struct device *dev,
 				      void *rnb_event);
 
 typedef void (*rednodebus_ranging_event_cb_t)(const struct device *dev,
-				      void *rnb_ranging_event);
+				      	      void *rnb_ranging_event);
 
 typedef void (*rednodebus_user_event_cb_t)(const struct device *dev,
-				      enum rednodebus_user_event evt,
-				      void *event_params);
+				           enum rednodebus_user_event evt,
+				           void *event_params);
+
+typedef void (*rednodebus_user_rxtx_signal_cb_t)(const struct device *dev,
+						 enum rednodebus_user_rxtx_signal sig,
+						 bool active);
 #endif /* CONFIG_REDNODEBUS */
 
 struct ieee802154_filter {
@@ -196,6 +205,11 @@ enum ieee802154_config_type {
 	 *  will disable rednodebus user radio events notification.
 	 */
 	REDNODEBUS_CONFIG_USER_EVENT_HANDLER,
+
+	/** Specifies new rednodebus user radio RX/TX signal handler. Specifying NULL as a handler
+	 *  will disable rednodebus user radio signals notification.
+	 */
+	REDNODEBUS_CONFIG_USER_RXTX_SIGNAL_HANDLER,
 #endif /* CONFIG_REDNODEBUS */
 
 	/** Updates MAC keys and key index for radios supporting transmit security. */
@@ -291,6 +305,9 @@ struct ieee802154_config {
 
 		/** ``REDNODEBUS_CONFIG_USER_EVENT_HANDLER`` */
 		rednodebus_user_event_cb_t rnb_user_event_handler;
+
+		/** ``REDNODEBUS_CONFIG_USER_RXTX_SIGNAL_HANDLER`` */
+		rednodebus_user_rxtx_signal_cb_t rnb_user_rxtx_signal_handler;
 #endif /* CONFIG_REDNODEBUS */
 
 		/** ``IEEE802154_CONFIG_MAC_KEYS``
@@ -408,7 +425,7 @@ struct rednodebus_user_event_params {
 struct rednodebus_user_settings {
 	uint16_t rnb_id;
 };
-#endif
+#endif /* CONFIG_REDNODEBUS */
 
 /**
  * @brief IEEE 802.15.4 radio interface API.
