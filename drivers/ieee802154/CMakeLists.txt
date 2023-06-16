@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(NOT DEFINED CONFIG_REDNODEBUS)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_UPIPE		ieee802154_uart_pipe.c)
@@ -19,3 +21,5 @@ zephyr_library_sources_ifdef(CONFIG_IEEE802154_NRF5		ieee802154_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx_iface.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_TELINK_B91	ieee802154_b91.c)
+
+endif()

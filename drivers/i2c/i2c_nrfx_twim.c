@@ -364,6 +364,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	nrfx_twim_enable(&dev_config->twim);
 #endif
 
+	i2c_nrfx_twim_recover_bus(dev);
+
 	return 0;
 }
 

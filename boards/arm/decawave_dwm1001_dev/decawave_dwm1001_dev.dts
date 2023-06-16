@@ -148,6 +148,10 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash0 {
 
 	partitions {
