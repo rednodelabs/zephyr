@@ -81,8 +81,11 @@ enum ieee802154_rx_fail_reason {
 };
 
 #ifdef CONFIG_REDNODEBUS
+#define REDNODEBUS_USER_PAYLOAD_MAX_LENGTH (16)
+
 enum rednodebus_user_event {
-	REDNODEBUS_USER_EVENT_NEW_STATE	/* New state */
+	REDNODEBUS_USER_EVENT_NEW_STATE,   /* New state */
+	REDNODEBUS_USER_EVENT_USER_PAYLOAD /* User payload */
 };
 
 enum rednodebus_user_rxtx_signal {
@@ -403,27 +406,36 @@ struct rednodebus_user_runtime_config {
 	bool energy_save_mode_enabled;
 	bool ranging_enabled;
 	uint32_t ranging_period_ms;
-};
+} __packed;
 
-/** RedNodeBus user state event. */
-struct rednodebus_user_event_state {
+/** RedNodeBus user state event parameters. */
+struct rednodebus_user_event_params_state {
 	uint8_t state;
 	uint8_t role;
 	uint16_t rnb_id;
 	uint32_t period_ms;
 	uint8_t uwb_mode;
 	uint8_t ranging_mode;
-};
+} __packed;
+
+/** RedNodeBus user payload event parameters. */
+struct rednodebus_user_event_params_user_payload {
+	uint8_t user_payload[REDNODEBUS_USER_PAYLOAD_MAX_LENGTH];
+} __packed;
 
 /** RedNodeBus user event parameters. */
 struct rednodebus_user_event_params {
-	struct rednodebus_user_event_state state;
-};
+	uint16_t event_params_length;
+	union {
+		struct rednodebus_user_event_params_state state;
+		struct rednodebus_user_event_params_user_payload user_payload;
+	};
+} __packed;
 
 /** RedNodeBus user settings. */
 struct rednodebus_user_settings {
 	uint16_t rnb_id;
-};
+} __packed;
 #endif /* CONFIG_REDNODEBUS */
 
 /**
