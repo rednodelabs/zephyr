@@ -372,7 +372,8 @@ enum rednodebus_user_bus_state {
 enum rednodebus_user_bus_role {
 	REDNODEBUS_USER_ROLE_UNDEFINED,
 	REDNODEBUS_USER_ROLE_ANCHOR,
-	REDNODEBUS_USER_ROLE_TAG
+	REDNODEBUS_USER_ROLE_TAG,
+	REDNODEBUS_USER_ROLE_RELAY
 };
 
 /** RedNodeBus user uwb mode. */
