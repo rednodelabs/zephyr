@@ -81,7 +81,7 @@ enum ieee802154_rx_fail_reason {
 };
 
 #ifdef CONFIG_REDNODEBUS
-#define REDNODEBUS_USER_PAYLOAD_MAX_LENGTH (16)
+#define REDNODEBUS_USER_PAYLOAD_MAX_LENGTH (64)
 
 enum rednodebus_user_event {
 	REDNODEBUS_USER_EVENT_NEW_STATE,   /* New state */
