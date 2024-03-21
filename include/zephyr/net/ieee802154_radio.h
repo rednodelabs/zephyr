@@ -438,6 +438,13 @@ struct rednodebus_user_event_params {
 struct rednodebus_user_settings {
 	uint16_t rnb_id;
 } __packed;
+
+/** RedNodeBus PA LNA config. */
+struct rednodebus_pa_lna_config {
+	uint32_t ctx_pin;
+	uint32_t crx_pin;
+	bool enabled;
+};
 #endif /* CONFIG_REDNODEBUS */
 
 /**
@@ -527,6 +534,10 @@ struct ieee802154_radio_api {
 	/** Reset RedNodeBus user settings. */
 	int (*set_rnb_user_settings)(const struct device *dev,
 				     const struct rednodebus_user_settings *user_settings);
+
+	/** Initialize RedNodeBus PA LNA configuration. */
+	int (*init_rnb_pa_lna_config)(const struct device *dev,
+				      const struct rednodebus_pa_lna_config *pa_lna_config);
 #endif /* CONFIG_REDNODEBUS */
 };
 
