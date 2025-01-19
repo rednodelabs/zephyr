@@ -82,6 +82,7 @@ enum ieee802154_rx_fail_reason {
 
 #ifdef CONFIG_REDNODEBUS
 #define REDNODEBUS_USER_PAYLOAD_MAX_LENGTH (64)
+#define REDNODEBUS_USER_EUID_BYTE_LENGTH   (6)
 
 enum rednodebus_user_event {
 	REDNODEBUS_USER_EVENT_NEW_STATE,   /* New state */
@@ -445,6 +446,13 @@ struct rednodebus_pa_lna_config {
 	uint32_t crx_pin;
 	bool enabled;
 };
+
+struct rednodebus_user_payload_params {
+	uint8_t reserved1;
+	uint8_t reserved2;
+	uint8_t dest_euid[REDNODEBUS_USER_EUID_BYTE_LENGTH];
+	uint8_t user_payload[REDNODEBUS_USER_PAYLOAD_MAX_LENGTH];
+} __packed;
 #endif /* CONFIG_REDNODEBUS */
 
 /**
@@ -538,6 +546,11 @@ struct ieee802154_radio_api {
 	/** Initialize RedNodeBus PA LNA configuration. */
 	int (*init_rnb_pa_lna_config)(const struct device *dev,
 				      const struct rednodebus_pa_lna_config *pa_lna_config);
+
+	/** Send RedNodeBus user payload. */
+	int (*send_rnb_user_payload)(const struct device *dev,
+				     const struct rednodebus_user_payload_params *rnb_user_payload_params,
+				     const uint16_t rnb_user_payload_params_length);
 #endif /* CONFIG_REDNODEBUS */
 };
 
